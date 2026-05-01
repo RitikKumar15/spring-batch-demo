@@ -20,6 +20,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.jdbc.core.namedparam.BeanPropertySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -29,12 +30,11 @@ import javax.sql.DataSource;
 @Configuration
 public class SpringBatchConfig {
 
-    @Value("${file.input}") private String fileInput;
-
     @Bean
-    public ItemReader<CoffeeEntity> flatFileItemReader() {
+    public ItemReader<CoffeeEntity> flatFileItemReader(@Value("${file.input}") Resource fileInput) {
         FlatFileItemReader<CoffeeEntity> itemReader = new FlatFileItemReader<>();
-        itemReader.setResource(new FileSystemResource(fileInput));
+        itemReader.setName("coffeeItemReader");
+        itemReader.setResource(fileInput);
         itemReader.setLinesToSkip(1);
         itemReader.setStrict(false);
         itemReader.setLineMapper(getLineMapper());
@@ -76,10 +76,10 @@ public class SpringBatchConfig {
 
     @Bean
     public Step step1(JobRepository jobRepository, PlatformTransactionManager platformTransactionManager,
-        ItemWriter<CoffeeEntity> itemWriter) {
+        ItemReader<CoffeeEntity> flatFileItemReader, ItemWriter<CoffeeEntity> itemWriter) {
         return new StepBuilder("step1", jobRepository)
                 .<CoffeeEntity, CoffeeEntity>chunk(10, platformTransactionManager)
-                .reader(flatFileItemReader())
+                .reader(flatFileItemReader)
                 .processor(itemProcessor())
                 .writer(itemWriter)
                 .build();
