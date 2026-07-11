@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spring-batch-k8s
+  labels:
+    app: spring-batch-k8s
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: spring-batch-k8s
+  template:
+    metadata:
+      labels:
+        app: spring-batch-k8s
+    spec:
+      containers:
+      - name: spring-batch-k8s
+        image: iamrk15/spring-batch-demo
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 9090
+        env:
+        - name: DB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: spring-batch-k8s-secrets
+              key: DB_USERNAME
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: spring-batch-k8s-secrets
+              key: DB_PASSWORD
+        - name: JWT_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: spring-batch-k8s-secrets
+              key: JWT_SECRET_KEY
+        resources:
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
